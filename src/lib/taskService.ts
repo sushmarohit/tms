@@ -17,6 +17,11 @@ export function createTask(
   createdById: string
 ): Task {
   const tasks = storage.getTasks()
+  const now = new Date().toISOString()
+  const assignmentHistory: Task['assignmentHistory'] =
+    data.assignedToId != null
+      ? [{ assignedById: createdById, assignedToId: data.assignedToId, previousAssignedToId: null, assignedAt: now }]
+      : []
   const task: Task = {
     id: 'task-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
     title: data.title,
@@ -26,8 +31,9 @@ export function createTask(
     departmentId: data.departmentId,
     assignedToId: data.assignedToId,
     createdById,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
+    assignmentHistory,
   }
   storage.setTasks([...tasks, task])
   return task
@@ -35,14 +41,39 @@ export function createTask(
 
 export function updateTask(
   taskId: string,
-  updates: Partial<Pick<Task, 'title' | 'description' | 'status' | 'priority' | 'assignedToId'>>
+  updates: Partial<Pick<Task, 'title' | 'description' | 'status' | 'priority' | 'assignedToId' | 'completedRemark'>>,
+  options?: { performedByUserId?: string }
 ): Task | null {
   const tasks = storage.getTasks()
   const idx = tasks.findIndex((t) => t.id === taskId)
   if (idx === -1) return null
-  const next = tasks.map((t, i) =>
-    i === idx ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t
-  )
+  const current = tasks[idx]!
+  const now = new Date().toISOString()
+  let assignmentHistory = current.assignmentHistory ?? []
+  if (
+    updates.assignedToId !== undefined &&
+    updates.assignedToId !== current.assignedToId &&
+    options?.performedByUserId
+  ) {
+    assignmentHistory = [
+      ...assignmentHistory,
+      {
+        assignedById: options.performedByUserId,
+        assignedToId: updates.assignedToId,
+        previousAssignedToId: current.assignedToId,
+        assignedAt: now,
+      },
+    ]
+  }
+  const next = tasks.map((t, i) => {
+    if (i !== idx) return t
+    return {
+      ...t,
+      ...updates,
+      updatedAt: now,
+      ...(assignmentHistory.length > (t.assignmentHistory?.length ?? 0) ? { assignmentHistory } : {}),
+    }
+  })
   storage.setTasks(next)
   return next[idx] ?? null
 }
@@ -62,6 +93,13 @@ export function canForwardTask(session: Session, task: Task): boolean {
 
 export function getDepartmentUsers(departmentId: string): User[] {
   return storage.getUsers().filter((u) => u.departmentId === departmentId && u.status === 'APPROVED')
+}
+
+/** Only USER role – for assigning/re-assigning tasks (not Admin or Super Admin). */
+export function getDepartmentUsersOnly(departmentId: string): User[] {
+  return storage
+    .getUsers()
+    .filter((u) => u.departmentId === departmentId && u.status === 'APPROVED' && u.role === 'USER')
 }
 
 export function getAllUsers(): User[] {

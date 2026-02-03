@@ -36,7 +36,7 @@ export function UserManagement() {
   if (session?.role !== 'SUPER_ADMIN') return null
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 max-w-full space-y-6">
       <h1 className="text-2xl font-semibold text-white">User Management</h1>
 
       <section>
@@ -44,62 +44,110 @@ export function UserManagement() {
         {pending.length === 0 ? (
           <p className="text-slate-400">No pending users.</p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-slate-600">
-            <table className="min-w-full divide-y divide-slate-600">
-              <thead className="bg-slate-800">
-                <tr>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-slate-300">Name</th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-slate-300">Email</th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-slate-300">Department</th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-slate-300">Requested role</th>
-                  <th className="px-4 py-2 text-right text-sm font-medium text-slate-300">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-600 bg-slate-800/50">
-                {pending.map((u) => (
-                  <tr key={u.id}>
-                    <td className="px-4 py-2 text-white">{u.name}</td>
-                    <td className="px-4 py-2 text-slate-300">{u.email}</td>
-                    <td className="px-4 py-2 text-slate-300">{getDeptName(u.departmentId)}</td>
-                    <td className="px-4 py-2 text-slate-300">{roleLabel(u.role)}</td>
-                    <td className="px-4 py-2 text-right">
-                      <button
-                        type="button"
-                        onClick={() => openApprove(u)}
-                        className="rounded bg-primary-600 px-2 py-1 text-sm font-medium text-white hover:bg-primary-500"
-                      >
-                        Approve
-                      </button>
-                    </td>
+          <>
+            {/* Mobile & tablet: card list */}
+            <div className="space-y-3 md:hidden">
+              {pending.map((u) => (
+                <div
+                  key={u.id}
+                  className="rounded-lg border border-slate-600 bg-slate-800/50 p-4 space-y-2"
+                >
+                  <div className="flex justify-between items-start gap-2">
+                    <p className="font-medium text-white">{u.name}</p>
+                    <button
+                      type="button"
+                      onClick={() => openApprove(u)}
+                      className="shrink-0 rounded bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-500"
+                    >
+                      Approve
+                    </button>
+                  </div>
+                  <p className="text-sm text-slate-300 break-all">{u.email}</p>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-400">
+                    <span><span className="text-slate-500">Dept:</span> {getDeptName(u.departmentId)}</span>
+                    <span><span className="text-slate-500">Role:</span> {roleLabel(u.role)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Desktop: table */}
+            <div className="hidden md:block min-w-0 overflow-x-auto rounded-lg border border-slate-600" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <table className="w-full min-w-[32rem] divide-y divide-slate-600">
+                <thead className="bg-slate-800">
+                  <tr>
+                    <th className="whitespace-nowrap px-4 py-2 text-left text-sm font-medium text-slate-300">Name</th>
+                    <th className="whitespace-nowrap px-4 py-2 text-left text-sm font-medium text-slate-300">Email</th>
+                    <th className="whitespace-nowrap px-4 py-2 text-left text-sm font-medium text-slate-300">Department</th>
+                    <th className="whitespace-nowrap px-4 py-2 text-left text-sm font-medium text-slate-300">Requested role</th>
+                    <th className="whitespace-nowrap px-4 py-2 text-right text-sm font-medium text-slate-300">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-600 bg-slate-800/50">
+                  {pending.map((u) => (
+                    <tr key={u.id}>
+                      <td className="whitespace-nowrap px-4 py-2 text-white">{u.name}</td>
+                      <td className="whitespace-nowrap px-4 py-2 text-slate-300">{u.email}</td>
+                      <td className="whitespace-nowrap px-4 py-2 text-slate-300">{getDeptName(u.departmentId)}</td>
+                      <td className="whitespace-nowrap px-4 py-2 text-slate-300">{roleLabel(u.role)}</td>
+                      <td className="whitespace-nowrap px-4 py-2 text-right">
+                        <button
+                          type="button"
+                          onClick={() => openApprove(u)}
+                          className="rounded bg-primary-600 px-2 py-1 text-sm font-medium text-white hover:bg-primary-500"
+                        >
+                          Approve
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
 
       <section>
         <h2 className="mb-3 text-lg font-medium text-white">All users</h2>
-        <div className="overflow-x-auto rounded-lg border border-slate-600">
-          <table className="min-w-full divide-y divide-slate-600">
+        {/* Mobile & tablet: card list */}
+        <div className="space-y-3 md:hidden">
+          {approved.map((u) => (
+            <div
+              key={u.id}
+              className="rounded-lg border border-slate-600 bg-slate-800/50 p-4 space-y-2"
+            >
+              <p className="font-medium text-white">{u.name}</p>
+              <p className="text-sm text-slate-300 break-all">{u.email}</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-400">
+                <span><span className="text-slate-500">Dept:</span> {getDeptName(u.departmentId)}</span>
+                <span><span className="text-slate-500">Role:</span> {roleLabel(u.role)}</span>
+              </div>
+              <span className="inline-block rounded bg-emerald-600/30 px-2 py-0.5 text-xs text-emerald-300">
+                Approved
+              </span>
+            </div>
+          ))}
+        </div>
+        {/* Desktop: table */}
+        <div className="hidden md:block min-w-0 overflow-x-auto rounded-lg border border-slate-600" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <table className="w-full min-w-[32rem] divide-y divide-slate-600">
             <thead className="bg-slate-800">
               <tr>
-                <th className="px-4 py-2 text-left text-sm font-medium text-slate-300">Name</th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-slate-300">Email</th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-slate-300">Department</th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-slate-300">Role</th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-slate-300">Status</th>
+                <th className="whitespace-nowrap px-4 py-2 text-left text-sm font-medium text-slate-300">Name</th>
+                <th className="whitespace-nowrap px-4 py-2 text-left text-sm font-medium text-slate-300">Email</th>
+                <th className="whitespace-nowrap px-4 py-2 text-left text-sm font-medium text-slate-300">Department</th>
+                <th className="whitespace-nowrap px-4 py-2 text-left text-sm font-medium text-slate-300">Role</th>
+                <th className="whitespace-nowrap px-4 py-2 text-left text-sm font-medium text-slate-300">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-600 bg-slate-800/50">
               {approved.map((u) => (
                 <tr key={u.id}>
-                  <td className="px-4 py-2 text-white">{u.name}</td>
-                  <td className="px-4 py-2 text-slate-300">{u.email}</td>
-                  <td className="px-4 py-2 text-slate-300">{getDeptName(u.departmentId)}</td>
-                  <td className="px-4 py-2 text-slate-300">{roleLabel(u.role)}</td>
-                  <td className="px-4 py-2">
+                  <td className="whitespace-nowrap px-4 py-2 text-white">{u.name}</td>
+                  <td className="whitespace-nowrap px-4 py-2 text-slate-300">{u.email}</td>
+                  <td className="whitespace-nowrap px-4 py-2 text-slate-300">{getDeptName(u.departmentId)}</td>
+                  <td className="whitespace-nowrap px-4 py-2 text-slate-300">{roleLabel(u.role)}</td>
+                  <td className="whitespace-nowrap px-4 py-2">
                     <span className="rounded bg-emerald-600/30 px-2 py-0.5 text-xs text-emerald-300">
                       Approved
                     </span>

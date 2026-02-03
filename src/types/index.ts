@@ -17,6 +17,13 @@ export interface User {
   createdAt: string
 }
 
+export interface AssignmentHistoryEntry {
+  assignedById: string
+  assignedToId: string | null
+  previousAssignedToId: string | null
+  assignedAt: string
+}
+
 export interface Task {
   id: string
   title: string
@@ -28,6 +35,8 @@ export interface Task {
   createdById: string
   createdAt: string
   updatedAt: string
+  completedRemark?: string
+  assignmentHistory?: AssignmentHistoryEntry[]
 }
 
 export interface Session {

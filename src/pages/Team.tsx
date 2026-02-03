@@ -26,21 +26,21 @@ export function Team() {
       <p className="text-slate-400">
         Read-only list of approved users in {department?.name ?? 'your department'}.
       </p>
-      <div className="overflow-x-auto rounded-lg border border-slate-600">
-        <table className="min-w-full divide-y divide-slate-600">
+      <div className="overflow-x-auto rounded-lg border border-slate-600 -mx-3 sm:mx-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <table className="min-w-[28rem] w-full divide-y divide-slate-600">
           <thead className="bg-slate-800">
             <tr>
-              <th className="px-4 py-2 text-left text-sm font-medium text-slate-300">Name</th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-slate-300">Email</th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-slate-300">Role</th>
+              <th className="whitespace-nowrap px-4 py-2 text-left text-sm font-medium text-slate-300">Name</th>
+              <th className="whitespace-nowrap px-4 py-2 text-left text-sm font-medium text-slate-300">Email</th>
+              <th className="whitespace-nowrap px-4 py-2 text-left text-sm font-medium text-slate-300">Role</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-600 bg-slate-800/50">
             {members.map((u) => (
               <tr key={u.id}>
-                <td className="px-4 py-2 text-white">{u.name}</td>
-                <td className="px-4 py-2 text-slate-300">{u.email}</td>
-                <td className="px-4 py-2 text-slate-300">{roleLabel(u.role)}</td>
+                <td className="whitespace-nowrap px-4 py-2 text-white">{u.name}</td>
+                <td className="whitespace-nowrap px-4 py-2 text-slate-300">{u.email}</td>
+                <td className="whitespace-nowrap px-4 py-2 text-slate-300">{roleLabel(u.role)}</td>
               </tr>
             ))}
           </tbody>

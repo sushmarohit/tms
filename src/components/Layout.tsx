@@ -85,24 +85,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Main content */}
       <div className="flex flex-1 flex-col lg:pl-64">
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-slate-700 bg-slate-900/95 px-4 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-30 flex h-14 min-w-0 items-center justify-between gap-2 border-b border-slate-700 bg-slate-900/95 px-3 backdrop-blur sm:gap-4 sm:px-6">
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
-            className="rounded p-2 text-slate-400 hover:bg-slate-700 hover:text-white lg:hidden"
+            className="shrink-0 rounded p-2 text-slate-400 hover:bg-slate-700 hover:text-white lg:hidden"
             aria-label="Open sidebar"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <div className="ml-auto flex items-center gap-2 sm:gap-4">
-            <span className="text-sm text-slate-300">
+          <div className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-4">
+            <span className="min-w-0 max-w-[120px] truncate text-sm text-slate-300 sm:max-w-[200px]" title={`${session.name} (${session.role.replace('_', ' ')})`}>
               {session.name} <span className="text-slate-500">({session.role.replace('_', ' ')})</span>
             </span>
             <Link
               to="/profile"
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
+              className={`shrink-0 rounded-lg px-2 py-1.5 text-xs font-medium sm:px-3 sm:py-1.5 sm:text-sm ${
                 location.pathname === '/profile'
                   ? 'bg-primary-600 text-white'
                   : 'text-slate-300 hover:bg-slate-700 hover:text-white'
@@ -113,13 +113,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={handleLogout}
-              className="rounded-lg bg-slate-700 px-3 py-1.5 text-sm font-medium text-slate-200 hover:bg-slate-600"
+              className="shrink-0 rounded-lg bg-slate-700 px-2 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-600 sm:px-3 sm:py-1.5 sm:text-sm"
             >
               Logout
             </button>
           </div>
         </header>
-        <main className="flex-1 px-4 py-6 sm:px-6">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden px-3 py-4 sm:px-6 sm:py-6">{children}</main>
       </div>
     </div>
   )

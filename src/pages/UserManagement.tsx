@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { storage } from '@/lib/storage'
 import { Modal } from '@/components/Modal'
@@ -54,13 +55,25 @@ export function UserManagement() {
                 >
                   <div className="flex justify-between items-start gap-2">
                     <p className="font-medium text-white">{u.name}</p>
-                    <button
-                      type="button"
-                      onClick={() => openApprove(u)}
-                      className="shrink-0 rounded bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-500"
-                    >
-                      Approve
-                    </button>
+                    <div className="flex shrink-0 gap-2">
+                      {u.status === 'APPROVED' && (
+                        <Link
+                          to={`/profile/${u.id}`}
+                          className="rounded bg-slate-600 px-3 py-1.5 text-sm font-medium text-slate-200 hover:bg-slate-500"
+                        >
+                          Profile
+                        </Link>
+                      )}
+                      {u.status === 'PENDING' && (
+                        <button
+                          type="button"
+                          onClick={() => openApprove(u)}
+                          className="rounded bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-500"
+                        >
+                          Approve
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <p className="text-sm text-slate-300 break-all">{u.email}</p>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-400">
@@ -90,13 +103,15 @@ export function UserManagement() {
                       <td className="whitespace-nowrap px-4 py-2 text-slate-300">{getDeptName(u.departmentId)}</td>
                       <td className="whitespace-nowrap px-4 py-2 text-slate-300">{roleLabel(u.role)}</td>
                       <td className="whitespace-nowrap px-4 py-2 text-right">
-                        <button
-                          type="button"
-                          onClick={() => openApprove(u)}
-                          className="rounded bg-primary-600 px-2 py-1 text-sm font-medium text-white hover:bg-primary-500"
-                        >
-                          Approve
-                        </button>
+                        {u.status === 'PENDING' && (
+                          <button
+                            type="button"
+                            onClick={() => openApprove(u)}
+                            className="rounded bg-primary-600 px-2 py-1 text-sm font-medium text-white hover:bg-primary-500"
+                          >
+                            Approve
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -116,7 +131,15 @@ export function UserManagement() {
               key={u.id}
               className="rounded-lg border border-slate-600 bg-slate-800/50 p-4 space-y-2"
             >
-              <p className="font-medium text-white">{u.name}</p>
+              <div className="flex justify-between items-start gap-2">
+                <p className="font-medium text-white">{u.name}</p>
+                <Link
+                  to={`/profile/${u.id}`}
+                  className="shrink-0 rounded bg-slate-600 px-3 py-1.5 text-sm font-medium text-slate-200 hover:bg-slate-500"
+                >
+                  Profile
+                </Link>
+              </div>
               <p className="text-sm text-slate-300 break-all">{u.email}</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-400">
                 <span><span className="text-slate-500">Dept:</span> {getDeptName(u.departmentId)}</span>
@@ -138,6 +161,7 @@ export function UserManagement() {
                 <th className="whitespace-nowrap px-4 py-2 text-left text-sm font-medium text-slate-300">Department</th>
                 <th className="whitespace-nowrap px-4 py-2 text-left text-sm font-medium text-slate-300">Role</th>
                 <th className="whitespace-nowrap px-4 py-2 text-left text-sm font-medium text-slate-300">Status</th>
+                <th className="whitespace-nowrap px-4 py-2 text-right text-sm font-medium text-slate-300">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-600 bg-slate-800/50">
@@ -151,6 +175,14 @@ export function UserManagement() {
                     <span className="rounded bg-emerald-600/30 px-2 py-0.5 text-xs text-emerald-300">
                       Approved
                     </span>
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2 text-right">
+                    <Link
+                      to={`/profile/${u.id}`}
+                      className="rounded bg-slate-600 px-2 py-1 text-sm font-medium text-slate-200 hover:bg-slate-500"
+                    >
+                      Profile
+                    </Link>
                   </td>
                 </tr>
               ))}

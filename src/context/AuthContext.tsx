@@ -8,6 +8,7 @@ interface AuthContextValue {
   signup: (data: { name: string; email: string; departmentId: string; role: 'ADMIN' | 'USER' }) => { ok: boolean; error?: string }
   logout: () => void
   updateProfile: (updates: { name?: string; email?: string }) => { ok: boolean; error?: string }
+  updateUserDepartmentRole: (userId: string, updates: { departmentId?: string; role?: User['role'] }) => { ok: boolean; error?: string }
   approveUser: (userId: string, role?: User['role'], departmentId?: string) => void
   getPendingUsers: () => User[]
   getUserById: (id: string) => User | undefined
@@ -91,6 +92,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { ok: true }
   }, [])
 
+  const updateUserDepartmentRole = useCallback((userId: string, updates: { departmentId?: string; role?: User['role'] }) => {
+    const current = storage.getSession()
+    if (!current || current.role !== 'SUPER_ADMIN') return { ok: false, error: 'Only Super Admin can update department and role' }
+    const users = storage.getUsers()
+    const idx = users.findIndex((u) => u.id === userId)
+    if (idx === -1) return { ok: false, error: 'User not found' }
+    const next = users.map((u, i) =>
+      i === idx ? { ...u, ...(updates.departmentId != null && { departmentId: updates.departmentId }), ...(updates.role != null && { role: updates.role }) } : u
+    )
+    storage.setUsers(next)
+    if (current.userId === userId) {
+      const updated = next[idx]!
+      const newSession: Session = {
+        ...current,
+        departmentId: updated.departmentId,
+        role: updated.role,
+      }
+      storage.setSession(newSession)
+      setSession(newSession)
+    }
+    return { ok: true }
+  }, [])
+
   const approveUser = useCallback((userId: string, role?: User['role'], departmentId?: string) => {
     const users = storage.getUsers()
     const updated = users.map((u) => {
@@ -119,6 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signup,
     logout,
     updateProfile,
+    updateUserDepartmentRole,
     approveUser,
     getPendingUsers,
     getUserById,

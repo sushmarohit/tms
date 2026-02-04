@@ -3,7 +3,9 @@ import { useAuth } from '@/context/AuthContext'
 import { storage } from '@/lib/storage'
 import { getTasksForSession } from '@/lib/taskService'
 import { StatsCard } from '@/components/StatsCard'
+import { TaskDetailModal } from '@/components/TaskDetailModal'
 import { TaskBreakdownPieChart, ProductivityChart } from '@/components/DashboardCharts'
+import type { Task } from '@/types'
 
 function useTaskStats(session: ReturnType<typeof useAuth>['session']) {
   return useMemo(() => {
@@ -24,6 +26,7 @@ function useTaskStats(session: ReturnType<typeof useAuth>['session']) {
 
 export function Dashboard() {
   const { session } = useAuth()
+  const [detailTask, setDetailTask] = useState<Task | null>(null)
   const tasks = useMemo(() => {
     if (!session) return []
     return getTasksForSession(session)
@@ -47,6 +50,13 @@ export function Dashboard() {
 
   const isSuperAdmin = session.role === 'SUPER_ADMIN'
 
+  const pendingTasks = tasks.filter((t) => t.status === 'PENDING')
+  const inProgressTasks = tasks.filter((t) => t.status === 'IN_PROGRESS')
+  const completedTasks = tasks.filter((t) => t.status === 'COMPLETED')
+  const reassignedTasks = tasks.filter(
+    (t) => t.assignedToId != null && t.assignedToId !== t.createdById
+  )
+
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
@@ -55,13 +65,45 @@ export function Dashboard() {
       <section>
         <h2 className="mb-3 text-sm font-medium text-slate-400">Overview</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <StatsCard label="Pending" value={stats.pending} variant="pending" />
-          <StatsCard label="In Progress" value={stats.inProgress} variant="progress" />
-          <StatsCard label="Completed" value={stats.completed} variant="completed" />
-          <StatsCard label="Re-assigned" value={stats.reassigned} variant="reassigned" />
-          <StatsCard label="Total" value={stats.total} variant="total" />
+          <StatsCard
+            label="Pending"
+            value={stats.pending}
+            variant="pending"
+            tasks={pendingTasks}
+            onTaskClick={setDetailTask}
+          />
+          <StatsCard
+            label="In Progress"
+            value={stats.inProgress}
+            variant="progress"
+            tasks={inProgressTasks}
+            onTaskClick={setDetailTask}
+          />
+          <StatsCard
+            label="Completed"
+            value={stats.completed}
+            variant="completed"
+            tasks={completedTasks}
+            onTaskClick={setDetailTask}
+          />
+          <StatsCard
+            label="Re-assigned"
+            value={stats.reassigned}
+            variant="reassigned"
+            tasks={reassignedTasks}
+            onTaskClick={setDetailTask}
+          />
+          <StatsCard
+            label="Total"
+            value={stats.total}
+            variant="total"
+            tasks={tasks}
+            onTaskClick={setDetailTask}
+          />
         </div>
       </section>
+
+      <TaskDetailModal task={detailTask} onClose={() => setDetailTask(null)} />
 
       {/* Charts – same for all, data scoped by role */}
       <section className="grid gap-6 lg:grid-cols-2">

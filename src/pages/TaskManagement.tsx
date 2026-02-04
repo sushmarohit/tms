@@ -7,13 +7,16 @@ import {
   updateTask,
   canEditTask,
   canForwardTask,
+  canApproveTaskCompletion,
+  requestTaskCompletion,
+  approveTaskCompletion,
   getDepartmentUsersOnly,
 } from '@/lib/taskService'
 import { TaskCard } from '@/components/TaskCard'
 import { TaskDetailModal } from '@/components/TaskDetailModal'
 import { Modal } from '@/components/Modal'
 import type { Task, TaskPriority } from '@/types'
-import { TASK_PRIORITY_OPTIONS } from '@/lib/constants'
+import { TASK_PRIORITY_OPTIONS, TASK_TITLE_OPTIONS } from '@/lib/constants'
 
 export function TaskManagement() {
   const { session } = useAuth()
@@ -23,6 +26,7 @@ export function TaskManagement() {
   const [forwardTask, setForwardTask] = useState<Task | null>(null)
   const [detailTask, setDetailTask] = useState<Task | null>(null)
   const [completionTask, setCompletionTask] = useState<Task | null>(null)
+  const [approveTask, setApproveTask] = useState<Task | null>(null)
 
   const displayTasks = useMemo(() => {
     if (!session) return []
@@ -37,7 +41,7 @@ export function TaskManagement() {
 
   if (!session) return null
 
-  const canCreate = session.role === 'SUPER_ADMIN' || session.role === 'ADMIN'
+  const canCreate = true
 
   return (
     <div className="space-y-6">
@@ -70,6 +74,7 @@ export function TaskManagement() {
               onForward={canForwardTask(session, task) ? setForwardTask : undefined}
               onViewDetail={setDetailTask}
               onRequestComplete={setCompletionTask}
+              onApproveComplete={canApproveTaskCompletion(session, task) ? () => setApproveTask(task) : undefined}
             />
           ))
         )}
@@ -95,6 +100,7 @@ export function TaskManagement() {
         onClose={() => setForwardTask(null)}
         onForwarded={refresh}
         session={session}
+        departments={departments}
         getUsers={(deptId) => getDepartmentUsersOnly(deptId)}
       />
       <TaskDetailModal task={detailTask} onClose={() => setDetailTask(null)} />
@@ -102,6 +108,15 @@ export function TaskManagement() {
         task={completionTask}
         onClose={() => setCompletionTask(null)}
         onSubmitted={refresh}
+      />
+      <ApproveCompletionModal
+        task={approveTask}
+        onClose={() => setApproveTask(null)}
+        onApproved={() => {
+          if (approveTask) approveTaskCompletion(approveTask.id)
+          refresh()
+          setApproveTask(null)
+        }}
       />
     </div>
   )
@@ -117,24 +132,31 @@ interface CreateTaskModalProps {
 }
 
 function CreateTaskModal({ open, onClose, onCreated, session, departments, getUsers }: CreateTaskModalProps) {
-  const [title, setTitle] = useState('')
+  const [titleOption, setTitleOption] = useState<string>(TASK_TITLE_OPTIONS[0].value)
+  const [titleOther, setTitleOther] = useState('')
   const [description, setDescription] = useState('')
   const [priority, setPriority] = useState<TaskPriority>('MEDIUM')
-  const [departmentId, setDepartmentId] = useState(session.departmentId ?? departments[0]?.id ?? '')
+  const defaultDept = session.departmentId ?? departments[0]?.id ?? ''
+  const [departmentId, setDepartmentId] = useState(defaultDept)
   const [assignedToId, setAssignedToId] = useState<string | null>(null)
 
   const users = departmentId ? getUsers(departmentId) : []
+  const title = titleOption === 'Other' ? titleOther.trim() : titleOption
+  const departmentsForCreate =
+    session.role === 'USER' ? departments.filter((d) => d.id === session.departmentId) : departments
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!title) return
     createTask(
       { title, description, priority, departmentId, assignedToId: assignedToId || null },
       session.userId
     )
-    setTitle('')
+    setTitleOption(TASK_TITLE_OPTIONS[0].value)
+    setTitleOther('')
     setDescription('')
     setPriority('MEDIUM')
-    setDepartmentId(session.departmentId ?? departments[0]?.id ?? '')
+    setDepartmentId(defaultDept)
     setAssignedToId(null)
     onCreated()
     onClose()
@@ -145,12 +167,24 @@ function CreateTaskModal({ open, onClose, onCreated, session, departments, getUs
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-slate-400">Title</label>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
+          <select
+            value={titleOption}
+            onChange={(e) => setTitleOption(e.target.value)}
             className="mt-1 w-full rounded border border-slate-600 bg-slate-700 px-3 py-2 text-white"
-          />
+          >
+            {TASK_TITLE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          {titleOption === 'Other' && (
+            <input
+              value={titleOther}
+              onChange={(e) => setTitleOther(e.target.value)}
+              placeholder="Enter task title"
+              required
+              className="mt-2 w-full rounded border border-slate-600 bg-slate-700 px-3 py-2 text-white placeholder-slate-500"
+            />
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-400">Description</label>
@@ -183,7 +217,7 @@ function CreateTaskModal({ open, onClose, onCreated, session, departments, getUs
             }}
             className="mt-1 w-full rounded border border-slate-600 bg-slate-700 px-3 py-2 text-white"
           >
-            {departments.map((d) => (
+            {departmentsForCreate.map((d) => (
               <option key={d.id} value={d.id}>{d.name}</option>
             ))}
           </select>
@@ -315,6 +349,7 @@ interface ForwardTaskModalProps {
   onClose: () => void
   onForwarded: () => void
   session: NonNullable<ReturnType<typeof useAuth>['session']>
+  departments: { id: string; name: string }[]
   getUsers: (deptId: string) => { id: string; name: string }[]
 }
 
@@ -324,14 +359,61 @@ interface CompletionRemarkModalProps {
   onSubmitted: () => void
 }
 
+interface ApproveCompletionModalProps {
+  task: Task | null
+  onClose: () => void
+  onApproved: () => void
+}
+
+function ApproveCompletionModal({ task, onClose, onApproved }: ApproveCompletionModalProps) {
+  if (!task) return null
+
+  return (
+    <Modal open={!!task} onClose={onClose} title="Approve task completion">
+      <div className="space-y-4">
+        <p className="text-slate-300">
+          Review the completion remark below. Approving will mark this task as completed.
+        </p>
+        <div>
+          <label className="block text-sm font-medium text-slate-400">Task</label>
+          <p className="mt-1 font-medium text-white">{task.title}</p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-400">Completion remark</label>
+          <p className="mt-1 whitespace-pre-wrap rounded bg-emerald-900/30 border border-emerald-700/50 p-3 text-sm text-slate-200 min-h-[80px]">
+            {task.completedRemark || '—'}
+          </p>
+        </div>
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded bg-slate-600 px-3 py-1.5 text-sm text-slate-200 hover:bg-slate-500"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onApproved}
+            className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-500"
+          >
+            Approve completion
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 function CompletionRemarkModal({ task, onClose, onSubmitted }: CompletionRemarkModalProps) {
+  const { session } = useAuth()
   const [remark, setRemark] = useState('')
 
-  if (!task) return null
+  if (!task || !session) return null
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    updateTask(task.id, { status: 'COMPLETED', completedRemark: remark.trim() || undefined })
+    requestTaskCompletion(task.id, session.userId, remark.trim() || undefined)
     setRemark('')
     onSubmitted()
     onClose()
@@ -364,13 +446,27 @@ function CompletionRemarkModal({ task, onClose, onSubmitted }: CompletionRemarkM
   )
 }
 
-function ForwardTaskModal({ task, onClose, onForwarded, session, getUsers }: ForwardTaskModalProps) {
+function ForwardTaskModal({ task, onClose, onForwarded, session, departments, getUsers }: ForwardTaskModalProps) {
+  const [departmentId, setDepartmentId] = useState('')
   const [assignedToId, setAssignedToId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (task) {
+      setDepartmentId(task.departmentId)
+      setAssignedToId(null)
+    }
+  }, [task?.id])
 
   if (!task) return null
 
   const open = !!task
-  const users = getUsers(task.departmentId)
+  const effectiveDeptId = departmentId || task.departmentId
+  const users = effectiveDeptId ? getUsers(effectiveDeptId) : []
+
+  const handleDepartmentChange = (deptId: string) => {
+    setDepartmentId(deptId)
+    setAssignedToId(null)
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -384,7 +480,19 @@ function ForwardTaskModal({ task, onClose, onForwarded, session, getUsers }: For
   return (
     <Modal open={open} onClose={onClose} title="Forward task">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <p className="text-slate-300">Assign this task to another team member (users only).</p>
+        <p className="text-slate-300">Choose a department and assign this task to a team member (users only).</p>
+        <div>
+          <label className="block text-sm font-medium text-slate-400">Department</label>
+          <select
+            value={effectiveDeptId}
+            onChange={(e) => handleDepartmentChange(e.target.value)}
+            className="mt-1 w-full rounded border border-slate-600 bg-slate-700 px-3 py-2 text-white"
+          >
+            {departments.map((d) => (
+              <option key={d.id} value={d.id}>{d.name}</option>
+            ))}
+          </select>
+        </div>
         <div>
           <label className="block text-sm font-medium text-slate-400">Assign to</label>
           <select

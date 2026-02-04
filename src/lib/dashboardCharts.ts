@@ -9,6 +9,7 @@ export interface TaskBreakdownItem {
 export function getTaskBreakdown(tasks: Task[]): TaskBreakdownItem[] {
   const pending = tasks.filter((t) => t.status === 'PENDING').length
   const inProgress = tasks.filter((t) => t.status === 'IN_PROGRESS').length
+  const pendingApproval = tasks.filter((t) => t.status === 'PENDING_APPROVAL').length
   const completed = tasks.filter((t) => t.status === 'COMPLETED').length
   const reassigned = tasks.filter(
     (t) => t.assignedToId != null && t.assignedToId !== t.createdById
@@ -17,6 +18,7 @@ export function getTaskBreakdown(tasks: Task[]): TaskBreakdownItem[] {
   return [
     { name: 'Pending', value: pending, fill: '#f59e0b' },
     { name: 'In Progress', value: inProgress, fill: '#3b82f6' },
+    { name: 'Pending Approval', value: pendingApproval, fill: '#a855f7' },
     { name: 'Completed', value: completed, fill: '#10b981' },
     { name: 'Re-assigned', value: reassigned, fill: '#8b5cf6' },
   ].filter((d) => d.value > 0)

@@ -12,6 +12,7 @@ interface TaskCardProps {
   onForward?: (task: Task) => void
   onViewDetail?: (task: Task) => void
   onRequestComplete?: (task: Task) => void
+  onApproveComplete?: () => void
 }
 
 const priorityColors: Record<string, string> = {
@@ -20,7 +21,7 @@ const priorityColors: Record<string, string> = {
   HIGH: 'bg-red-600/80 text-white',
 }
 
-export function TaskCard({ task, session, onUpdate, onEdit, onForward, onViewDetail, onRequestComplete }: TaskCardProps) {
+export function TaskCard({ task, session, onUpdate, onEdit, onForward, onViewDetail, onRequestComplete, onApproveComplete }: TaskCardProps) {
   const users = storage.getUsers().filter((u) => u.status === 'APPROVED')
   const assignee = users.find((u) => u.id === task.assignedToId)
   const canEdit = canEditTask(session, task)
@@ -32,6 +33,7 @@ export function TaskCard({ task, session, onUpdate, onEdit, onForward, onViewDet
       onRequestComplete(task)
       return
     }
+    if (task.status === 'PENDING_APPROVAL') return
     const tasks = storage.getTasks()
     const next = tasks.map((t) =>
       t.id === task.id ? { ...t, status, updatedAt: new Date().toISOString() } : t
@@ -96,6 +98,15 @@ export function TaskCard({ task, session, onUpdate, onEdit, onForward, onViewDet
               className="rounded bg-primary-600 px-2 py-1 text-sm font-medium text-white hover:bg-primary-500"
             >
               Forward
+            </button>
+          )}
+          {task.status === 'PENDING_APPROVAL' && onApproveComplete && (
+            <button
+              type="button"
+              onClick={onApproveComplete}
+              className="rounded bg-emerald-600 px-2 py-1 text-sm font-medium text-white hover:bg-emerald-500"
+            >
+              Approve completion
             </button>
           )}
         </div>

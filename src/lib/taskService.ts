@@ -1,11 +1,24 @@
 import type { Task, Session, User } from '@/types'
 import { storage } from './storage'
 
+/** Last person who assigned this task (to current assignee). Used for completion approval. */
+export function getLastReassignerUserId(task: Task): string | null {
+  const history = task.assignmentHistory
+  if (!history || history.length === 0) return null
+  const last = history[history.length - 1]!
+  return last.assignedById
+}
+
 export function getTasksForSession(session: Session): Task[] {
   const tasks = storage.getTasks()
   if (session.role === 'SUPER_ADMIN') return tasks
   if (session.role === 'ADMIN') return tasks.filter((t) => t.departmentId === session.departmentId)
-  return tasks.filter((t) => t.assignedToId === session.userId)
+  const users = storage.getUsers()
+  return tasks.filter((t) => {
+    if (t.assignedToId === session.userId) return true
+    if (t.status === 'PENDING_APPROVAL' && getLastReassignerUserId(t) === session.userId) return true
+    return false
+  })
 }
 
 export function getTaskById(id: string): Task | undefined {
@@ -89,6 +102,79 @@ export function canForwardTask(session: Session, task: Task): boolean {
   if (session.role === 'ADMIN' && task.departmentId === session.departmentId) return true
   if (session.role === 'USER' && task.assignedToId === session.userId) return true
   return false
+}
+
+/** Whether completion by assignee should require approval from last re-assigner (only for USER re-assigners). */
+export function needsCompletionApproval(task: Task): boolean {
+  const lastReassignerId = getLastReassignerUserId(task)
+  if (!lastReassignerId) return false
+  const users = storage.getUsers()
+  const user = users.find((u) => u.id === lastReassignerId)
+  return user?.role === 'USER'
+}
+
+export function requestTaskCompletion(
+  taskId: string,
+  completedByUserId: string,
+  completedRemark?: string
+): Task | null {
+  const tasks = storage.getTasks()
+  const idx = tasks.findIndex((t) => t.id === taskId)
+  if (idx === -1) return null
+  const task = tasks[idx]!
+  const now = new Date().toISOString()
+  if (needsCompletionApproval(task)) {
+    const next = tasks.map((t, i) =>
+      i !== idx
+        ? t
+        : {
+            ...t,
+            status: 'PENDING_APPROVAL' as const,
+            completedRemark: completedRemark ?? t.completedRemark,
+            completionRequestedBy: completedByUserId,
+            updatedAt: now,
+          }
+    )
+    storage.setTasks(next)
+    return next[idx] ?? null
+  }
+  const next = tasks.map((t, i) =>
+    i !== idx
+      ? t
+      : {
+          ...t,
+          status: 'COMPLETED' as const,
+          completedRemark: completedRemark ?? t.completedRemark,
+          updatedAt: now,
+        }
+  )
+  storage.setTasks(next)
+  return next[idx] ?? null
+}
+
+export function approveTaskCompletion(taskId: string): Task | null {
+  const tasks = storage.getTasks()
+  const idx = tasks.findIndex((t) => t.id === taskId)
+  if (idx === -1) return null
+  const task = tasks[idx]!
+  if (task.status !== 'PENDING_APPROVAL') return null
+  const now = new Date().toISOString()
+  const next = tasks.map((t, i) =>
+    i !== idx
+      ? t
+      : {
+          ...t,
+          status: 'COMPLETED' as const,
+          completionRequestedBy: undefined,
+          updatedAt: now,
+        }
+  )
+  storage.setTasks(next)
+  return next[idx] ?? null
+}
+
+export function canApproveTaskCompletion(session: Session, task: Task): boolean {
+  return task.status === 'PENDING_APPROVAL' && getLastReassignerUserId(task) === session.userId
 }
 
 export function getDepartmentUsers(departmentId: string): User[] {

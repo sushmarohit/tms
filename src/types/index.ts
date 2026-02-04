@@ -1,5 +1,5 @@
 export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'USER'
-export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED'
+export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'PENDING_APPROVAL'
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH'
 
 export interface Department {
@@ -37,6 +37,8 @@ export interface Task {
   updatedAt: string
   completedRemark?: string
   assignmentHistory?: AssignmentHistoryEntry[]
+  /** Set when status is PENDING_APPROVAL: user who requested completion */
+  completionRequestedBy?: string
 }
 
 export interface Session {

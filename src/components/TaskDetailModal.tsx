@@ -35,9 +35,11 @@ export function TaskDetailModal({ task, onClose }: TaskDetailModalProps) {
             {task.description || '—'}
           </p>
         </div>
-        {task.status === 'COMPLETED' && task.completedRemark && (
+        {((task.status === 'COMPLETED' || task.status === 'PENDING_APPROVAL') && task.completedRemark) && (
           <div>
-            <label className="block text-sm font-medium text-slate-400">Completion remark</label>
+            <label className="block text-sm font-medium text-slate-400">
+              Completion remark {task.status === 'PENDING_APPROVAL' && '(awaiting approval)'}
+            </label>
             <p className="mt-1 whitespace-pre-wrap rounded bg-emerald-900/30 p-3 text-sm text-slate-200">
               {task.completedRemark}
             </p>

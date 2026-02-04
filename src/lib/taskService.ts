@@ -13,7 +13,6 @@ export function getTasksForSession(session: Session): Task[] {
   const tasks = storage.getTasks()
   if (session.role === 'SUPER_ADMIN') return tasks
   if (session.role === 'ADMIN') return tasks.filter((t) => t.departmentId === session.departmentId)
-  const users = storage.getUsers()
   return tasks.filter((t) => {
     if (t.assignedToId === session.userId) return true
     if (t.status === 'PENDING_APPROVAL' && getLastReassignerUserId(t) === session.userId) return true

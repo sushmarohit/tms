@@ -142,8 +142,6 @@ function CreateTaskModal({ open, onClose, onCreated, session, departments, getUs
 
   const users = departmentId ? getUsers(departmentId) : []
   const title = titleOption === 'Other' ? titleOther.trim() : titleOption
-  const departmentsForCreate =
-    session.role === 'USER' ? departments.filter((d) => d.id === session.departmentId) : departments
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -217,7 +215,7 @@ function CreateTaskModal({ open, onClose, onCreated, session, departments, getUs
             }}
             className="mt-1 w-full rounded border border-slate-600 bg-slate-700 px-3 py-2 text-white"
           >
-            {departmentsForCreate.map((d) => (
+            {departments.map((d) => (
               <option key={d.id} value={d.id}>{d.name}</option>
             ))}
           </select>

@@ -100,3 +100,15 @@ export function getProductivityData(
     date: key,
   }))
 }
+
+/** Get completed count for a single date (YYYY-MM-DD). For calendar date filter. */
+export function getProductivityForDate(tasks: Task[], dateStr: string): number {
+  const completedTasks = tasks.filter((t) => t.status === 'COMPLETED')
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const targetStart = new Date(y, m - 1, d, 0, 0, 0, 0)
+  const targetEnd = new Date(y, m - 1, d, 23, 59, 59, 999)
+  return completedTasks.filter((t) => {
+    const updated = new Date(t.updatedAt).getTime()
+    return updated >= targetStart.getTime() && updated <= targetEnd.getTime()
+  }).length
+}

@@ -5,6 +5,7 @@ import { getTasksForSession } from '@/lib/taskService'
 import { StatsCard } from '@/components/StatsCard'
 import { TaskDetailModal } from '@/components/TaskDetailModal'
 import { TaskBreakdownPieChart, ProductivityChart } from '@/components/DashboardCharts'
+import { DeptOverviewCard } from '@/components/DeptOverviewCard'
 import type { Task } from '@/types'
 
 function useTaskStats(session: ReturnType<typeof useAuth>['session']) {
@@ -33,18 +34,7 @@ export function Dashboard() {
   }, [session])
   const stats = useTaskStats(session)
 
-  const [deptStats] = useState(() => {
-    if (session?.role !== 'SUPER_ADMIN') return null
-    const allTasks = storage.getTasks()
-    const depts = storage.getDepartments()
-    return depts.map((d) => ({
-      id: d.id,
-      name: d.name,
-      total: allTasks.filter((t) => t.departmentId === d.id).length,
-      pending: allTasks.filter((t) => t.departmentId === d.id && t.status === 'PENDING').length,
-      completed: allTasks.filter((t) => t.departmentId === d.id && t.status === 'COMPLETED').length,
-    }))
-  })
+  const departments = useMemo(() => storage.getDepartments(), [])
 
   if (!session) return null
 
@@ -112,21 +102,27 @@ export function Dashboard() {
       </section>
 
       {/* Department overview – Super Admin only */}
-      {isSuperAdmin && deptStats && (
+      {isSuperAdmin && (
         <section>
           <h2 className="mb-3 text-lg font-medium text-white">Department overview</h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {deptStats.map((d) => (
-              <div
-                key={d.id}
-                className="rounded-lg border border-slate-600 bg-slate-800/50 px-4 py-3"
-              >
-                <p className="font-medium text-white">{d.name}</p>
-                <p className="mt-1 text-sm text-slate-400">
-                  {d.total} tasks · {d.pending} pending · {d.completed} completed
-                </p>
-              </div>
-            ))}
+            {departments.map((d) => {
+              const deptPending = tasks.filter((t) => t.departmentId === d.id && t.status === 'PENDING')
+              const deptCompleted = tasks.filter((t) => t.departmentId === d.id && t.status === 'COMPLETED')
+              const deptTotal = tasks.filter((t) => t.departmentId === d.id).length
+              return (
+                <DeptOverviewCard
+                  key={d.id}
+                  name={d.name}
+                  total={deptTotal}
+                  pending={deptPending.length}
+                  completed={deptCompleted.length}
+                  pendingTasks={deptPending}
+                  completedTasks={deptCompleted}
+                  onTaskClick={setDetailTask}
+                />
+              )
+            })}
           </div>
         </section>
       )}

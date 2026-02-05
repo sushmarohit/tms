@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import type { Task } from '@/types'
+import { storage } from '@/lib/storage'
 
 interface StatsCardProps {
   label: string
@@ -40,6 +41,9 @@ export function StatsCard({ label, value, variant = 'default', tasks = [], onTas
 
   const showList = open || (hover && tasks.length > 0)
   const hasTasks = tasks.length > 0
+  const users = useMemo(() => storage.getUsers().filter((u) => u.status === 'APPROVED'), [])
+  const getAssigneeName = (assignedToId: string | null) =>
+    assignedToId ? users.find((u) => u.id === assignedToId)?.name ?? '—' : null
 
   return (
     <div
@@ -79,6 +83,11 @@ export function StatsCard({ label, value, variant = 'default', tasks = [], onTas
                   <span className="line-clamp-2">{task.title}</span>
                   {task.description && (
                     <span className="mt-0.5 block truncate text-xs text-slate-400">{task.description}</span>
+                  )}
+                  {getAssigneeName(task.assignedToId) && (
+                    <span className="mt-0.5 block text-xs text-slate-500">
+                      Assigned to: {getAssigneeName(task.assignedToId)}
+                    </span>
                   )}
                 </button>
               </li>

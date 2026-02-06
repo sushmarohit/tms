@@ -10,6 +10,7 @@ interface AuthContextValue {
   updateProfile: (updates: { name?: string; email?: string }) => { ok: boolean; error?: string }
   updateUserDepartmentRole: (userId: string, updates: { departmentId?: string; role?: User['role'] }) => { ok: boolean; error?: string }
   approveUser: (userId: string, role?: User['role'], departmentId?: string) => void
+  rejectUser: (userId: string) => void
   getPendingUsers: () => User[]
   getUserById: (id: string) => User | undefined
 }
@@ -28,6 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const users = storage.getUsers()
     const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase())
     if (!user) return { ok: false, error: 'User not found' }
+    if (user.status === 'REJECTED') return { ok: false, error: 'Account has been rejected' }
     if (user.status !== 'APPROVED') return { ok: false, error: 'Account pending approval' }
     const s: Session = {
       userId: user.id,
@@ -129,6 +131,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     storage.setUsers(updated)
   }, [])
 
+  const rejectUser = useCallback((userId: string) => {
+    const users = storage.getUsers()
+    const updated = users.map((u) => {
+      if (u.id !== userId) return u
+      return {
+        ...u,
+        status: 'REJECTED' as const,
+      }
+    })
+    storage.setUsers(updated)
+  }, [])
+
   const getPendingUsers = useCallback(() => {
     return storage.getUsers().filter((u) => u.status === 'PENDING')
   }, [])
@@ -145,6 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateProfile,
     updateUserDepartmentRole,
     approveUser,
+    rejectUser,
     getPendingUsers,
     getUserById,
   }

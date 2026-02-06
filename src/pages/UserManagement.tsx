@@ -6,7 +6,7 @@ import { Modal } from '@/components/Modal'
 import type { User, Role } from '@/types'
 
 export function UserManagement() {
-  const { session, approveUser } = useAuth()
+  const { session, approveUser, rejectUser } = useAuth()
   const [users, setUsers] = useState<User[]>(() => storage.getUsers())
   const [approveModal, setApproveModal] = useState<{ user: User } | null>(null)
   const [roleOverride, setRoleOverride] = useState<Role | null>(null)
@@ -29,6 +29,13 @@ export function UserManagement() {
     approveUser(approveModal.user.id, roleOverride ?? undefined, deptOverride ?? undefined)
     setApproveModal(null)
     refresh()
+  }
+
+  const handleReject = (userId: string) => {
+    if (window.confirm('Are you sure you want to reject this user?')) {
+      rejectUser(userId)
+      refresh()
+    }
   }
 
   const getDeptName = (id: string) => departments.find((d) => d.id === id)?.name ?? id
@@ -65,13 +72,22 @@ export function UserManagement() {
                         </Link>
                       )}
                       {u.status === 'PENDING' && (
-                        <button
-                          type="button"
-                          onClick={() => openApprove(u)}
-                          className="rounded bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-500"
-                        >
-                          Approve
-                        </button>
+                        <div className="flex shrink-0 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openApprove(u)}
+                            className="rounded bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-500"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleReject(u.id)}
+                            className="rounded bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-500"
+                          >
+                            Reject
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -104,13 +120,22 @@ export function UserManagement() {
                       <td className="whitespace-nowrap px-4 py-2 text-slate-300">{roleLabel(u.role)}</td>
                       <td className="whitespace-nowrap px-4 py-2 text-right">
                         {u.status === 'PENDING' && (
-                          <button
-                            type="button"
-                            onClick={() => openApprove(u)}
-                            className="rounded bg-primary-600 px-2 py-1 text-sm font-medium text-white hover:bg-primary-500"
-                          >
-                            Approve
-                          </button>
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openApprove(u)}
+                              className="rounded bg-primary-600 px-2 py-1 text-sm font-medium text-white hover:bg-primary-500"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleReject(u.id)}
+                              className="rounded bg-red-600 px-2 py-1 text-sm font-medium text-white hover:bg-red-500"
+                            >
+                              Reject
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>

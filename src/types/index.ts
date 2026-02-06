@@ -13,7 +13,7 @@ export interface User {
   email: string
   departmentId: string
   role: Role
-  status: 'PENDING' | 'APPROVED'
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'
   createdAt: string
 }
 
